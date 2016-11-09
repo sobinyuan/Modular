@@ -1,6 +1,7 @@
-println isThreeDebug.toBoolean()
+import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryPlugin
 
-if (isThreeDebug.toBoolean()) {
+if (isThreeAsApp.toBoolean()) {
     apply plugin: 'com.android.application'
 } else {
     apply plugin: 'com.android.library'
@@ -55,7 +56,7 @@ android {
 
     sourceSets {
         main {
-            if (isThreeDebug.toBoolean()) {
+            if (isThreeAsApp.toBoolean()) {
                 manifest.srcFile 'src/main/debug/AndroidManifest.xml'
             } else {
                 manifest.srcFile 'src/main/release/AndroidManifest.xml'
@@ -66,7 +67,11 @@ android {
         }
     }
 }
-apply from: 'https://raw.githubusercontent.com/adwiv/android-fat-aar/master/fat-aar.gradle'
+if (!isThreeAsApp.toBoolean()) {
+    //合成aar脚本
+    apply from: 'fat-aar.gradle'
+}
+
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
@@ -75,184 +80,90 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:24.0.0'
     testCompile 'junit:junit:4.12'
+    if (!isThreeAsApp.toBoolean()) {
+        //embedded 标记需要合并的module
 
-    embedded project(':modularone')
-    embedded project(':modulartwo')
-//    embedded 'com.isnc.facesdk:superid-sdk:1.6.9'
-//    embedded project(':libme')
+        embedded project(':modularone')
+        embedded project(':modulartwo')
+
+    } else {
+        compile project(':modularone')
+        compile project(':modulartwo')
+    }
+
 }
 
+if (!isThreeAsApp.toBoolean()) {
+    //upload to bintray
+    apply from: 'install.gradle'
+    apply from: 'bintray.gradle'
 
+    //build Jar
+    task buildJar(type: Jar) {
 
-//apply plugin: 'com.github.dcendents.android-maven'
-//
-//group = publishedGroupId                               // Maven Group ID for the artifact
-//
-//install {
-//    repositories.mavenInstaller {
-//        // This generates POM.xml with proper parameters
-//        pom {
-//            project {
-//                packaging 'aar'
-//                groupId publishedGroupId
-//                artifactId artifact
-//
-//                // Add your description here
-//                name libraryName
-//                description libraryDescription
-//                url siteUrl
-//
-//                // Set your license
-//                licenses {
-//                    license {
-//                        name licenseName
-//                        url licenseUrl
-//                    }
-//                }
-//                developers {
-//                    developer {
-//                        id developerId
-//                        name developerName
-//                        email developerEmail
-//                    }
-//                }
-//                scm {
-//                    connection gitUrl
-//                    developerConnection gitUrl
-//                    url siteUrl
-//
-//                }
-//            }
-//        }
-//    }
-//}
-//apply plugin: 'com.jfrog.bintray'
-//
-//version = libraryVersion
-//
-//if (project.hasProperty("android")) { // Android libraries
-//    task sourcesJar(type: Jar) {
-//        classifier = 'sources'
-//        from android.sourceSets.main.java.srcDirs
-//    }
-//
-//    task javadoc(type: Javadoc) {
-//        source = android.sourceSets.main.java.srcDirs
-//        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-//
-//    }
-//
-//
-//
-//
-//} else { // Java libraries
-//    task sourcesJar(type: Jar, dependsOn: classes) {
-//        classifier = 'sources'
-//        from sourceSets.main.allSource
-//    }
-//}
-//
-//
-//
-//task javadocJar(type: Jar, dependsOn: javadoc) {
-//    classifier = 'javadoc'
-//    from javadoc.destinationDir
-//}
-//
-//artifacts {
-//    archives javadocJar
-//    archives sourcesJar
-//}
-//
-//// Bintray
-//Properties properties = new Properties()
-//properties.load(project.rootProject.file('local.properties').newDataInputStream())
-//
-//bintray {
-//    user = properties.getProperty("bintray.user")
-//    key = properties.getProperty("bintray.apikey")
-//
-//    configurations = ['archives']
-//    pkg {
-//        repo = bintrayRepo
-//        name = bintrayName
-//        desc = libraryDescription
-//        websiteUrl = siteUrl
-//        vcsUrl = gitUrl
-//        licenses = allLicenses
-//        publish = true
-//        publicDownloadNumbers = true
-//        version {
-//            desc = libraryDescription
-//            gpg {
-//                sign = true //Determines whether to GPG sign the files. The default is false
-//                passphrase = properties.getProperty("bintray.gpg.password")
-//                //Optional. The passphrase for GPG signing'
-//            }
-//        }
-//    }
-//}
+        appendix = "demo"
+        baseName = "androidJar"
+        version = "1.7.0"
+        classifier = "release"
 
+        //后缀名
+        extension = "jar"
+        //最终的 Jar 包名，如果没设置，默认为 [baseName]-[appendix]-[version]-[classifier].[extension]
+        archiveName = "SDK.jar"
 
-task buildJar(type: Jar) {
+        //需打包的资源所在的路径集
+        def srcClassDir = [project.buildDir.absolutePath + "/intermediates/classes/release"];
+        //初始化资源路径集
+        from srcClassDir
 
-    appendix = "demo"
-    baseName = "androidJar"
-    version = "1.7.0"
-    classifier = "release"
-
-    //后缀名
-    extension = "jar"
-    //最终的 Jar 包名，如果没设置，默认为 [baseName]-[appendix]-[version]-[classifier].[extension]
-    archiveName = "SDK.jar"
-
-    //需打包的资源所在的路径集
-    def srcClassDir = [project.buildDir.absolutePath + "/intermediates/classes/release"];
-    //初始化资源路径集
-    from srcClassDir
-
-    //去除路径集下部分的资源
-//    exclude 'com/isnc/facesdk/facesfeature/**'
+        //去除路径集下部分的资源
 //    exclude '**/BuildConfig.class'
 //    exclude '**/R.class'
 //    exclude '**/R$*.class'
 
+    }
+
+    def androidSDKDir = plugins.getPlugin('com.android.library').sdkHandler.getSdkFolder()
+    def androidJarDir = androidSDKDir.toString() + '/platforms/' + "${android.compileSdkVersion}" + '/android.jar'
+
+//proguard Jar
+    task proguardJar(dependsOn: ['buildJar'], type: proguard.gradle.ProGuardTask) {
+        //Android 默认的 graoguard 文件
+        configuration android.getDefaultProguardFile('proguard-android.txt')
+        //会根据该文件对 Jar 进行混淆，注意：需要在 manifest 注册的组件也要加入该文件中
+        configuration 'proguard-rules.pro'
+
+        String inJar = buildJar.archivePath.getAbsolutePath()
+        //输入 jar
+        injars inJar
+        //输出 jar
+        outjars inJar.substring(0, inJar.lastIndexOf('/')) + "/SuperID${buildJar.archiveName}"
+        libraryjars(androidJarDir)
+
+        //设置不删除未引用的资源(类，方法等)
+        dontshrink
+
+        Plugin appPlugin = getPlugins().hasPlugin(AppPlugin) ?
+                getPlugins().findPlugin(AppPlugin) :
+                getPlugins().findPlugin(LibraryPlugin)
+        if (appPlugin != null) {
+            List<String> runtimeJarList
+            if (appPlugin.getMetaClass().getMetaMethod("getRuntimeJarList")) {
+                runtimeJarList = appPlugin.getRuntimeJarList()
+            } else if (android.getMetaClass().getMetaMethod("getBootClasspath")) {
+                runtimeJarList = android.getBootClasspath()
+            } else {
+                runtimeJarList = appPlugin.getBootClasspath()
+            }
+
+            for (String runtimeJar : runtimeJarList) {
+                //给 proguard 添加 runtime
+                libraryjars(runtimeJar)
+            }
+        }
+    }
 }
 
-def androidSDKDir = plugins.getPlugin('com.android.library').sdkHandler.getSdkFolder()
-def androidJarDir = androidSDKDir.toString() + '/platforms/' + "${android.compileSdkVersion}" + '/android.jar'
 
 
-task proguardJar(dependsOn: ['buildJar'], type: proguard.gradle.ProGuardTask) {
-    //Android 默认的 graoguard 文件
-    configuration android.getDefaultProguardFile('proguard-android.txt')
-    //会根据该文件对 Jar 进行混淆，注意：需要在 manifest 注册的组件也要加入该文件中
-    configuration 'proguard-rules.pro'
 
-    String inJar = buildJar.archivePath.getAbsolutePath()
-    //输入 jar
-    injars inJar
-    //输出 jar
-    outjars inJar.substring(0, inJar.lastIndexOf('/')) + "/SuperID${buildJar.archiveName}"
-    libraryjars(androidJarDir)
-
-    //设置不删除未引用的资源(类，方法等)
-    dontshrink
-
-//    AppPlugin appPlugin = getPlugins().findPlugin(AppPlugin)
-//    if (appPlugin != null) {
-//        List<String> runtimeJarList
-//        if (appPlugin.getMetaClass().getMetaMethod("getRuntimeJarList")) {
-//            runtimeJarList = appPlugin.getRuntimeJarList()
-//        } else if (android.getMetaClass().getMetaMethod("getBootClasspath")) {
-//            runtimeJarList = android.getBootClasspath()
-//        } else {
-//            runtimeJarList = appPlugin.getBootClasspath()
-//        }
-//
-//        for (String runtimeJar : runtimeJarList) {
-//            //给 proguard 添加 runtime
-//            libraryjars(runtimeJar)
-//        }
-//    }
-}

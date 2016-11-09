@@ -51,3 +51,14 @@ build
 out/
 gradle-app.setting
 captures
+.gitignore
+app/
+build.gradle
+gradle.properties
+gradle/
+gradlew
+gradlew.bat
+modularone/
+modularthree/
+modulartwo/
+settings.gradle

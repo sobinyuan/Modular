@@ -33,16 +33,16 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile 'com.android.support:appcompat-v7:24.0.0'
-    //    compile 'com.sobin.modularthree:modularthree:1.0.3'
+
     testCompile 'junit:junit:4.12'
-    //        compile project(':modularone')
-    //        compile project(':modulartwo')
-    //        compile project(':modularthree')
-    //    if (!isAppDebug.toBoolean()) {
-    //        compile project(':modularone')
-    //        compile project(':modulartwo')
-    //        compile project(':modularthree')
-    //        compile (name:'modularthree-release',ext:'aar')
-    //    }
-    compile files('libs/SuperIDSDK.jar')
+    if (isAppDebug.toBoolean()) {
+        //其他modual必须必须为library
+        compile project(':modularone')
+        compile project(':modulartwo')
+        compile project(':modularthree')
+
+    } else {
+//        compile (name:'modularthree-release',ext:'aar')
+        compile 'com.sobin.modularthree:modularthree:1.0.3'
+    }
 }

@@ -1,6 +1,4 @@
-println isOneDebug.toBoolean()
-
-if (isOneDebug.toBoolean()) {
+if (isOneAsApp.toBoolean()) {
     apply plugin: 'com.android.application'
 } else {
     apply plugin: 'com.android.library'
@@ -11,7 +9,7 @@ android {
     buildToolsVersion "24.0.2"
 
     defaultConfig {
-//        applicationId "com.sobin.modularone"
+
         minSdkVersion 19
         targetSdkVersion 24
         versionCode 1
@@ -29,7 +27,7 @@ android {
 
     sourceSets {
         main {
-            if (isOneDebug.toBoolean()) {
+            if (isOneAsApp.toBoolean()) {
                 manifest.srcFile 'src/main/debug/AndroidManifest.xml'
             } else {
                 manifest.srcFile 'src/main/release/AndroidManifest.xml'
